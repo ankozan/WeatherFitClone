@@ -1,16 +1,91 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import axios from 'axios';
 
 const WeatherInfo = () => {
+    const [weatherData, setWeatherData] = useState(null);
+
+    useEffect(() => {
+        // Fetch weather data when the component mounts
+        const fetchData = async () => {
+            const location = '98029'; // Replace with your desired location
+            const data = await getWeatherData(location);
+            if (data) {
+                const extractedInfo = extractWeatherInfo(data);
+                setWeatherData(extractedInfo);
+            }
+        };
+
+        fetchData();
+    }, []);
+
     return (
         <View style={styles.container}>
-            <Text style={styles.cityName}>Puyallup</Text>
-            <Text style={styles.condition}>Hazy</Text>
-            <Text style={styles.temperature}>84°F</Text>
-            <Text style={styles.feelsLike}>Feels Like 88°F</Text>
+            {weatherData ? (
+                <>
+                    <Text style={styles.cityName}>{weatherData.location}</Text>
+                    <Text style={styles.condition}>{weatherData.condition}</Text>
+                    <Text style={styles.temperature}>{weatherData.temperature}°F</Text>
+                    <Text style={styles.feelsLike}>{weatherData.recommendation}</Text>
+                </>
+            ) : (
+                <Text>Loading weather data...</Text>
+            )}
         </View>
     );
 };
+
+// Rest of your code (getWeatherData, extractWeatherInfo, getOutfitRecommendation, styles)
+
+async function getWeatherData(location) {
+    const API_URL = "https://api.weatherapi.com/v1/current.json"
+    const API_KEY = "78b83d2610dc41679a4200242230707"
+
+    const url = `${API_URL}?key=${API_KEY}&q=${location}`;
+
+    try {
+        const response = await axios.get(url);
+        const data = response.data;
+        return data;
+    } catch (error) {
+        console.error('Error fetching weather data:', error);
+        return null;
+    }
+}
+
+function extractWeatherInfo(data) {
+    try {
+        const temperature = data.current.temp_f;
+        const condition = data.current.condition.text;
+        const humidity = data.current.humidity;
+        const location = data.location.name;
+        const recommendation = getOutfitRecommendation(temperature); // Get the outfit recommendation
+        return {
+            temperature,
+            condition,
+            humidity,
+            location,
+            recommendation
+        };
+    } catch (error) {
+        console.error('Error extracting weather information:', error);
+        return null;
+    }
+}
+
+function getOutfitRecommendation(temperature) {
+    // Implement your outfit recommendation logic here
+    // Return the appropriate recommendation based on the temperature
+    // Example:
+    if (temperature > 70) {
+        return 'Wear light and breathable clothing.';
+    } else if (temperature <= 70 && temperature > 50) {
+        return 'Consider wearing a light jacket.';
+    } else {
+        return 'Bundle up with warm clothing.';
+    }
+}
+
 
 const styles = StyleSheet.create({
     container: {
@@ -20,9 +95,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.7)',
         borderRadius: 10,
         padding: 20,
-        width: 250,
+        width: 'auto',
         top: '5%',
-
         marginLeft: 'auto',
         marginRight: 'auto',
         zIndex: 10,

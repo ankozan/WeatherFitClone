@@ -1,14 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import axios from 'axios';
+import * as Location from 'expo-location';
 
 const WeatherInfo = () => {
     const [weatherData, setWeatherData] = useState(null);
+    const [postalCode, setPostalCode] = useState(null);
 
     useEffect(() => {
+
+        const fetchPostalCode = async () => {
+            if (Platform.OS === 'android' && !Device.isDevice) {
+                setErrorMsg(
+                    'Oops, this will not work on Snack in an Android Emulator. Try it on your device!'
+                );
+                return;
+            }
+
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                setErrorMsg('Permission to access location was denied');
+                return;
+            }
+            //
+            let location = await Location.getCurrentPositionAsync({});
+            let address = await Location.reverseGeocodeAsync(location.coords);
+            let postalCode = address[0].postalCode;
+            setPostalCode(postalCode);
+        };
         // Fetch weather data when the component mounts
         const fetchData = async () => {
-            const location = '98029'; // Replace with your desired location
+            await fetchPostalCode()
+            console.log(postalCode);
+            const location = postalCode; // Replace with your desired location
             const data = await getWeatherData(location);
             if (data) {
                 const extractedInfo = extractWeatherInfo(data);

@@ -1,56 +1,75 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import axios from 'axios';
 import * as Location from 'expo-location';
+import Icon from 'react-native-vector-icons/FontAwesome'; // Import Font Awesome icons
 
 const WeatherInfo = () => {
     const [weatherData, setWeatherData] = useState(null);
     const [postalCode, setPostalCode] = useState(null);
+    const [updatingLocation, setUpdatingLocation] = useState(false);
+
+    const fetchPostalCode = async () => {
+        if (Platform.OS === 'android' && !Device.isDevice) {
+            setErrorMsg(
+                'Oops, this will not work on Snack in an Android Emulator. Try it on your device!'
+            );
+            return;
+        }
+
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            setErrorMsg('Permission to access location was denied');
+            return;
+        }
+        let location = await Location.getCurrentPositionAsync({});
+        let address = await Location.reverseGeocodeAsync(location.coords);
+        let postalCode = address[0].postalCode;
+        setPostalCode(postalCode);
+    };
+    const fetchData = async () => {
+        await fetchPostalCode();
+        console.log(postalCode);
+        const location = postalCode; // Replace with your desired location
+        const data = await getWeatherData(location);
+        if (data) {
+            const extractedInfo = extractWeatherInfo(data);
+            setWeatherData(extractedInfo);
+        }
+    };
 
     useEffect(() => {
-
-        const fetchPostalCode = async () => {
-            if (Platform.OS === 'android' && !Device.isDevice) {
-                setErrorMsg(
-                    'Oops, this will not work on Snack in an Android Emulator. Try it on your device!'
-                );
-                return;
-            }
-
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                setErrorMsg('Permission to access location was denied');
-                return;
-            }
-            //
-            let location = await Location.getCurrentPositionAsync({});
-            let address = await Location.reverseGeocodeAsync(location.coords);
-            let postalCode = address[0].postalCode;
-            setPostalCode(postalCode);
-        };
-        // Fetch weather data when the component mounts
-        const fetchData = async () => {
-            await fetchPostalCode()
-            console.log(postalCode);
-            const location = postalCode; // Replace with your desired location
-            const data = await getWeatherData(location);
-            if (data) {
-                const extractedInfo = extractWeatherInfo(data);
-                setWeatherData(extractedInfo);
-            }
-        };
-
         fetchData();
     }, []);
+
+    const updateWeather = async () => {
+        setUpdatingLocation(true); // Start location update
+
+        await fetchData();
+
+        setUpdatingLocation(false); // Location update complete
+    };
+
 
     return (
         <View style={styles.container}>
             {weatherData ? (
                 <>
-                    <Text style={styles.cityName}>{weatherData.location}</Text>
+                    <TouchableOpacity style={styles.buttonContainer} onPress={updateWeather}>
+                        {updatingLocation ? (
+                            <Text style={styles.updateText}>Updating Location...</Text>
+                        ) : (
+                            <>
+                                <Text style={styles.cityName}>{weatherData.location}</Text>
+                                <Icon name="search" size={25} color="black" />
+                            </>
+                        )}
+                    </TouchableOpacity>
+
+
                     <Text style={styles.condition}>{weatherData.condition}</Text>
                     <Text style={styles.temperature}>{weatherData.temperature}°F</Text>
-                    <Text style={styles.feelsLike}>{weatherData.recommendation}</Text>
+                    <Text style={styles.recommendation}>{weatherData.recommendation}</Text>
                 </>
             ) : (
                 <Text>Loading weather data...</Text>
@@ -116,7 +135,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         position: 'absolute',
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        backgroundColor: '#f3f2f2',
         borderRadius: 10,
         padding: 20,
         width: 'auto',
@@ -128,20 +147,34 @@ const styles = StyleSheet.create({
     cityName: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 10,
+        marginBottom: 5,
+        right: 10,
     },
     condition: {
         fontSize: 18,
         marginBottom: 5,
+        fontWeight: 'bold',
+
     },
     temperature: {
         fontSize: 32,
         fontWeight: 'bold',
         marginBottom: 5,
     },
-    feelsLike: {
+    recommendation: {
         fontSize: 16,
+        fontWeight: 'bold',
+
     },
+    buttonContainer: {
+        flexDirection: 'row', // Align items horizontally
+        alignItems: 'center', // Center items vertically
+        padding: 10,
+        backgroundColor: '#f3f2f2',
+        borderRadius: 5,
+        marginBottom: 10,
+    },
+
 });
 
 export default WeatherInfo;

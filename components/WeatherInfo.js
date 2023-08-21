@@ -1,14 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, View, Text, StyleSheet, TextInput, Modal } from 'react-native';
 import axios from 'axios';
 import * as Location from 'expo-location';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Import Font Awesome icons
+import { MenuProvider, Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-menu';
+
 
 const WeatherInfo = () => {
     const [weatherData, setWeatherData] = useState(null);
     const [postalCode, setPostalCode] = useState(null);
     const [updatingLocation, setUpdatingLocation] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchLocation, setSearchLocation] = useState('');
+    const [isModalVisible, setModalVisible] = useState(false);
 
+    const handleSearchOptionSelect = () => {
+        setModalVisible(true);
+    };
+
+    const handleSearchInputChange = (text) => {
+        setSearchLocation(text);
+    };
+
+    const handleSearchSubmit = async () => {
+        await setPostalCode(searchLocation); // Update postalCode state with entered value
+        setIsSearching(false);
+        setSearchLocation('');
+        setModalVisible(false);
+        updateWeather(searchLocation); // Pass the updated searchLocation
+    };
+
+    const handleCloseModal = () => {
+        setModalVisible(false);
+    };
     const fetchPostalCode = async () => {
         if (Platform.OS === 'android' && !Device.isDevice) {
             setErrorMsg(
@@ -30,8 +54,7 @@ const WeatherInfo = () => {
     const fetchData = async () => {
         await fetchPostalCode();
         console.log(postalCode);
-        const location = postalCode; // Replace with your desired location
-        const data = await getWeatherData(location);
+        const data = await getWeatherData(postalCode);
         if (data) {
             const extractedInfo = extractWeatherInfo(data);
             setWeatherData(extractedInfo);
@@ -42,31 +65,34 @@ const WeatherInfo = () => {
         fetchData();
     }, []);
 
-    const updateWeather = async () => {
-        setUpdatingLocation(true); // Start location update
+    const updateWeather = async (location) => {
+        setUpdatingLocation(true);
 
-        await fetchData();
+        const data = await getWeatherData(location); // Fetch weather data based on the passed location
+        if (data) {
+            const extractedInfo = extractWeatherInfo(data);
+            setWeatherData(extractedInfo);
+        }
 
-        setUpdatingLocation(false); // Location update complete
+        setUpdatingLocation(false);
     };
-
 
     return (
         <View style={styles.container}>
+            <Menu style={styles.buttonContainer}>
+                <MenuTrigger>
+                    <Icon name="search" size={25} color="black" />
+                </MenuTrigger>
+                <MenuOptions>
+                    <MenuOption onSelect={fetchData} text="My Location" />
+                    <MenuOption onSelect={handleSearchOptionSelect}>
+                        <Text>Search</Text>
+                    </MenuOption>
+                </MenuOptions>
+            </Menu>
             {weatherData ? (
                 <>
-                    <TouchableOpacity style={styles.buttonContainer} onPress={updateWeather}>
-                        {updatingLocation ? (
-                            <Text style={styles.updateText}>Updating Location...</Text>
-                        ) : (
-                            <>
-                                <Icon name="search" size={25} color="black" />
-                            </>
-                        )}
-                    </TouchableOpacity>
                     <Text style={styles.cityName}>{weatherData.location}</Text>
-
-
                     <Text style={styles.condition}>{weatherData.condition}</Text>
                     <Text style={styles.temperature}>{weatherData.temperature}°F</Text>
                     <Text style={styles.recommendation}>{weatherData.recommendation}</Text>
@@ -74,7 +100,31 @@ const WeatherInfo = () => {
             ) : (
                 <Text>Loading weather data...</Text>
             )}
+            <Modal
+                visible={isModalVisible}
+                animationType="slide"
+                transparent={true}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Enter location"
+                            value={searchLocation}
+                            onChangeText={handleSearchInputChange}
+                        />
+                        <TouchableOpacity onPress={handleSearchSubmit} style={styles.searchButton}>
+                            <Text>Search</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={handleCloseModal} style={styles.closeButton}>
+                            <Text>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
         </View>
+
     );
 };
 
@@ -130,6 +180,7 @@ function getOutfitRecommendation(temperature) {
 }
 
 
+
 const styles = StyleSheet.create({
     container: {
         justifyContent: 'center',
@@ -177,7 +228,40 @@ const styles = StyleSheet.create({
         right: 0,
         top: 0
     },
-
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '80%',
+    },
+    searchInput: {
+        height: 40,
+        borderColor: 'gray',
+        borderWidth: 1,
+        marginBottom: 10,
+        paddingHorizontal: 10,
+    },
+    searchButton: {
+        backgroundColor: '#1665E1',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    closeButton: {
+        backgroundColor: 'red',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+        alignItems: 'center',
+    },
 });
 
 export default WeatherInfo;

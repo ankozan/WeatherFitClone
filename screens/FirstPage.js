@@ -10,7 +10,7 @@ const FirstPage = () => {
 
             <WeatherInfo />
             <Image
-                source={require('../assets/simple1.png')}
+                source={require('../assets/60-70-norain-men-removebg.png')}
                 style={styles.image}
                 resizeMode="contain"
             />

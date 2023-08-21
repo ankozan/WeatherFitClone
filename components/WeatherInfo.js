@@ -60,11 +60,11 @@ const WeatherInfo = () => {
                             <Text style={styles.updateText}>Updating Location...</Text>
                         ) : (
                             <>
-                                <Text style={styles.cityName}>{weatherData.location}</Text>
                                 <Icon name="search" size={25} color="black" />
                             </>
                         )}
                     </TouchableOpacity>
+                    <Text style={styles.cityName}>{weatherData.location}</Text>
 
 
                     <Text style={styles.condition}>{weatherData.condition}</Text>
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f3f2f2',
         borderRadius: 10,
         padding: 20,
-        width: 'auto',
+        width: '100%',
         top: '5%',
         marginLeft: 'auto',
         marginRight: 'auto',
@@ -173,6 +173,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#f3f2f2',
         borderRadius: 5,
         marginBottom: 10,
+        position: 'absolute',
+        right: 0,
+        top: 0
     },
 
 });

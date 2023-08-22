@@ -48,34 +48,184 @@ const WeatherInfo = () => {
         }
         let location = await Location.getCurrentPositionAsync({});
         let address = await Location.reverseGeocodeAsync(location.coords);
-        let postalCode = address[0].postalCode;
-        setPostalCode(postalCode);
+        let zipCode = address[0].postalCode;
+        setPostalCode(zipCode);
     };
     const fetchData = async () => {
         await fetchPostalCode();
-        console.log(postalCode);
+
         const data = await getWeatherData(postalCode);
+
         if (data) {
             const extractedInfo = extractWeatherInfo(data);
             setWeatherData(extractedInfo);
+
         }
     };
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        const initializeApp = async () => {
+            try {
+                await fetchPostalCode();
+                const data = await getWeatherData(postalCode);
+                if (data) {
+                    const extractedInfo = extractWeatherInfo(data);
+                    setWeatherData(extractedInfo);
+                }
+            } catch (error) {
+                console.error('Error initializing app:', error);
+            }
+        };
+
+        initializeApp();
+    }, [postalCode]); // Added postalCode as a dependency
 
     const updateWeather = async (location) => {
         setUpdatingLocation(true);
-
         const data = await getWeatherData(location); // Fetch weather data based on the passed location
         if (data) {
             const extractedInfo = extractWeatherInfo(data);
             setWeatherData(extractedInfo);
         }
-
         setUpdatingLocation(false);
     };
+
+
+    // Rest of your code (getWeatherData, extractWeatherInfo, getOutfitRecommendation, styles)
+
+    async function getWeatherData(location) {
+        const API_URL = "https://api.weatherapi.com/v1/current.json"
+        const API_KEY = "78b83d2610dc41679a4200242230707"
+
+        const url = `${API_URL}?key=${API_KEY}&q=${location}`;
+
+        try {
+            const response = await axios.get(url);
+            const data = response.data;
+            return data;
+        } catch (error) {
+            console.error('Error fetching weather data:', error);
+            return null;
+        }
+    }
+
+    function extractWeatherInfo(data) {
+        try {
+            const temperature = data.current.temp_f;
+            const condition = data.current.condition.text;
+            const humidity = data.current.humidity;
+            const location = data.location.name;
+            const recommendation = getOutfitRecommendation(temperature); // Get the outfit recommendation
+            return {
+                temperature,
+                condition,
+                humidity,
+                location,
+                recommendation
+            };
+        } catch (error) {
+            console.error('Error extracting weather information:', error);
+            return null;
+        }
+    }
+
+    function getOutfitRecommendation(temperature) {
+        // Implement your outfit recommendation logic here
+        // Return the appropriate recommendation based on the temperature
+        // Example:
+        if (temperature > 70) {
+            return 'Wear light and breathable clothing.';
+        } else if (temperature <= 70 && temperature > 50) {
+            return 'Consider wearing a light jacket.';
+        } else {
+            return 'Bundle up with warm clothing.';
+        }
+    }
+
+
+
+    const styles = StyleSheet.create({
+        container: {
+            justifyContent: 'center',
+            alignItems: 'center',
+            position: 'absolute',
+            backgroundColor: '#f3f2f2',
+            borderRadius: 10,
+            padding: 20,
+            width: '100%',
+            top: '5%',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            zIndex: 10,
+        },
+        cityName: {
+            fontSize: 24,
+            fontWeight: 'bold',
+            marginBottom: 5,
+            right: 10,
+        },
+        condition: {
+            fontSize: 18,
+            marginBottom: 5,
+            fontWeight: 'bold',
+
+        },
+        temperature: {
+            fontSize: 32,
+            fontWeight: 'bold',
+            marginBottom: 5,
+        },
+        recommendation: {
+            fontSize: 16,
+            fontWeight: 'bold',
+
+        },
+        buttonContainer: {
+            flexDirection: 'row', // Align items horizontally
+            alignItems: 'center', // Center items vertically
+            padding: 10,
+            backgroundColor: '#f3f2f2',
+            borderRadius: 5,
+            marginBottom: 10,
+            position: 'absolute',
+            right: 0,
+            top: 0
+        },
+        modalContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        },
+        modalContent: {
+            backgroundColor: 'white',
+            padding: 20,
+            borderRadius: 10,
+            width: '80%',
+        },
+        searchInput: {
+            height: 40,
+            borderColor: 'gray',
+            borderWidth: 1,
+            marginBottom: 10,
+            paddingHorizontal: 10,
+        },
+        searchButton: {
+            backgroundColor: '#1665E1',
+            paddingVertical: 10,
+            paddingHorizontal: 20,
+            borderRadius: 5,
+            alignItems: 'center',
+            marginBottom: 10,
+        },
+        closeButton: {
+            backgroundColor: 'red',
+            paddingVertical: 10,
+            paddingHorizontal: 20,
+            borderRadius: 5,
+            alignItems: 'center',
+        },
+    });
 
     return (
         <View style={styles.container}>
@@ -127,141 +277,4 @@ const WeatherInfo = () => {
 
     );
 };
-
-// Rest of your code (getWeatherData, extractWeatherInfo, getOutfitRecommendation, styles)
-
-async function getWeatherData(location) {
-    const API_URL = "https://api.weatherapi.com/v1/current.json"
-    const API_KEY = "78b83d2610dc41679a4200242230707"
-
-    const url = `${API_URL}?key=${API_KEY}&q=${location}`;
-
-    try {
-        const response = await axios.get(url);
-        const data = response.data;
-        return data;
-    } catch (error) {
-        console.error('Error fetching weather data:', error);
-        return null;
-    }
-}
-
-function extractWeatherInfo(data) {
-    try {
-        const temperature = data.current.temp_f;
-        const condition = data.current.condition.text;
-        const humidity = data.current.humidity;
-        const location = data.location.name;
-        const recommendation = getOutfitRecommendation(temperature); // Get the outfit recommendation
-        return {
-            temperature,
-            condition,
-            humidity,
-            location,
-            recommendation
-        };
-    } catch (error) {
-        console.error('Error extracting weather information:', error);
-        return null;
-    }
-}
-
-function getOutfitRecommendation(temperature) {
-    // Implement your outfit recommendation logic here
-    // Return the appropriate recommendation based on the temperature
-    // Example:
-    if (temperature > 70) {
-        return 'Wear light and breathable clothing.';
-    } else if (temperature <= 70 && temperature > 50) {
-        return 'Consider wearing a light jacket.';
-    } else {
-        return 'Bundle up with warm clothing.';
-    }
-}
-
-
-
-const styles = StyleSheet.create({
-    container: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'absolute',
-        backgroundColor: '#f3f2f2',
-        borderRadius: 10,
-        padding: 20,
-        width: '100%',
-        top: '5%',
-        marginLeft: 'auto',
-        marginRight: 'auto',
-        zIndex: 10,
-    },
-    cityName: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 5,
-        right: 10,
-    },
-    condition: {
-        fontSize: 18,
-        marginBottom: 5,
-        fontWeight: 'bold',
-
-    },
-    temperature: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        marginBottom: 5,
-    },
-    recommendation: {
-        fontSize: 16,
-        fontWeight: 'bold',
-
-    },
-    buttonContainer: {
-        flexDirection: 'row', // Align items horizontally
-        alignItems: 'center', // Center items vertically
-        padding: 10,
-        backgroundColor: '#f3f2f2',
-        borderRadius: 5,
-        marginBottom: 10,
-        position: 'absolute',
-        right: 0,
-        top: 0
-    },
-    modalContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    modalContent: {
-        backgroundColor: 'white',
-        padding: 20,
-        borderRadius: 10,
-        width: '80%',
-    },
-    searchInput: {
-        height: 40,
-        borderColor: 'gray',
-        borderWidth: 1,
-        marginBottom: 10,
-        paddingHorizontal: 10,
-    },
-    searchButton: {
-        backgroundColor: '#1665E1',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    closeButton: {
-        backgroundColor: 'red',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
-        alignItems: 'center',
-    },
-});
-
 export default WeatherInfo;

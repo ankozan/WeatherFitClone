@@ -1,11 +1,12 @@
 // FirstPage.js
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import WeatherInfo from '../components/WeatherInfo';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Import Font Awesome icons
 import { MenuProvider } from 'react-native-popup-menu';
 
 const FirstPage = () => {
+
     return (
         <View style={styles.container}>
             <WeatherInfo />

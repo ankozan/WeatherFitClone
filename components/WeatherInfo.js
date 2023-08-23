@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, View, Text, StyleSheet, TextInput, Modal } from 'react-native';
+import { Image, TouchableOpacity, View, Text, StyleSheet, TextInput, Modal } from 'react-native';
 import axios from 'axios';
 import * as Location from 'expo-location';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Import Font Awesome icons
@@ -72,6 +72,22 @@ const WeatherInfo = () => {
                     const extractedInfo = extractWeatherInfo(data);
                     setWeatherData(extractedInfo);
                 }
+                const degree = await data.current.temp_f
+                console.log('degree= ' + degree)
+
+                let imagePath;
+                if (degree >= -100 && degree <= 50) {
+                    imagePath = require('../assets/clothes/men/norain/0-50/1.png');
+                } if (degree >= 51 && degree <= 60) {
+                    imagePath = require('../assets/clothes/men/norain/50-60/1.png');
+                }
+                if (degree >= 61 && degree <= 80) {
+                    imagePath = require('../assets/clothes/men/norain/60-80/1.png');
+                } else if (degree > 80) {
+                    imagePath = require('../assets/clothes/men/norain/80-90/1.png');
+                }
+                // Fetch weather data and update the state using setWeatherData
+                // After setting the data, immediately call the callback function
             } catch (error) {
                 console.error('Error initializing app:', error);
             }
@@ -89,6 +105,7 @@ const WeatherInfo = () => {
         }
         setUpdatingLocation(false);
     };
+
 
 
     // Rest of your code (getWeatherData, extractWeatherInfo, getOutfitRecommendation, styles)
@@ -272,7 +289,11 @@ const WeatherInfo = () => {
                     </View>
                 </View>
             </Modal>
-
+            <Image
+                source={require('../assets/clothes/men/norain/60-80/1.png')}
+                style={styles.image}
+                resizeMode="contain"
+            />
         </View>
 
     );
